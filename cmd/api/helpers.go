@@ -36,7 +36,9 @@ func (app *application) readIDParam(r *http.Request) (int64, error) {
 // header map containing any additional HTTP headers we want to include in the response.
 func (app *application) writeJSON(w http.ResponseWriter, status int, data interface{}, headers http.Header) error {
 	// Encode the data to JSON, returning the error if there was one.
-	js, err := json.Marshal(data)
+	//
+	// Use the json.MarshalIndent() so that whitespace is added to the encoded JSON.
+	js, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
 		return err
 	}
