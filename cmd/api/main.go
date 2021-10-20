@@ -26,6 +26,7 @@ type application struct {
 	logger *log.Logger
 }
 
+// go run ./cmd/api -port=3030 -env=production
 func main() {
 	// Declare an instance of the config struct.
 	var cfg config
