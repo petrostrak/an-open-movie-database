@@ -37,7 +37,9 @@ func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Encode the struct to JSON and send it as the HTTP response.
-	if err := app.writeJSON(w, http.StatusOK, movie, nil); err != nil {
+	//
+	// Create an envelope{"movie":movie} instance and pass it to writeJSON()
+	if err := app.writeJSON(w, http.StatusOK, envelope{"movie": movie}, nil); err != nil {
 		app.logger.Println(err)
 		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
 	}
