@@ -31,7 +31,8 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 	// If this returns an error we send the client the error message along with a 400
 	// Bad Request status code.
 	if err := app.readJSON(w, r, &input); err != nil {
-		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		// Use the badRequestResponse() helper.
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
