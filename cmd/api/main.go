@@ -49,7 +49,10 @@ func main() {
 
 	// Read the DSN value from the db-dsn command-line flag into the config struct.
 	// We default to using our development DSN if no flag is provided.
-	flag.StringVar(&cfg.db.dsn, "db-dsn", "postgres://omdb:pa55word@localhost/omdb", "PostgreSQL DSN")
+	//
+	// Use the value of the OMDB_DB_DSN environment variable as the default value
+	// for the db-dsn command-line flag.
+	flag.StringVar(&cfg.db.dsn, "db-dsn", os.Getenv("OMDB_DB_DSN"), "PostgreSQL DSN")
 	flag.Parse()
 
 	// Initialize a new logger which writes messages to the standard out stream,
