@@ -20,7 +20,7 @@ func New() *Validator {
 }
 
 // Valid returns true if the errors map doesn't contain any entries
-func Valid(v *Validator) bool {
+func (v *Validator) Valid() bool {
 	return len(v.Errors) == 0
 }
 
