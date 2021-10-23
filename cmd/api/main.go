@@ -11,6 +11,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/petrostrak/an-open-movie-database/internal/data"
 )
 
 const (
@@ -37,6 +38,7 @@ type config struct {
 type application struct {
 	config config
 	logger *log.Logger
+	models data.Models
 }
 
 // go run ./cmd/api -port=3030 -env=production
@@ -86,9 +88,13 @@ func main() {
 
 	// Declare an instance of the application struct, containing the config struct and
 	// the logger.
+	//
+	// Use the data.NewModels() to initialize a Models struct, passing in the
+	// connection pool as a parameter.
 	app := &application{
 		config: cfg,
 		logger: logger,
+		models: data.NewModels(db),
 	}
 
 	// Declare a new servemux and add a /v1/healthcheck route which dispatches requests
