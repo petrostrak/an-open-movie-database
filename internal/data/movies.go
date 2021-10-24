@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/petrostrak/an-open-movie-database/internal/validator"
 )
 
@@ -42,9 +43,34 @@ type MovieModel struct {
 	DB *sql.DB
 }
 
-// Add a placeholder method for inserting a new record in the movies table.
+// The Insert() acceptsa pointer to a movie struct, which should contain the
+// data for the new record.
 func (m MovieModel) Insert(movie *Movie) error {
-	return nil
+	// Define the SQL query for inserting a new record in the movies table and returning
+	// the system-generated data.
+	query := `
+			INSERT INTO movies (title, year, runtime, genres)
+			VALUES ($1, $2, $3, $4)
+			RETURNING id, created_at, version`
+
+	// Create an args slice containing the values for the placeholder parameters from
+	// the movie struct. Declaring this slice immediately next to our SQL query
+	// helps to make it nice and clear what values are beeing used where in the
+	// query.
+	//
+	// In order to store a []string slice in postgres we need to pass it through the
+	// pq.Array() adapter function before executing the SQL query.
+	args := []interface{}{movie.Title, movie.Year, movie.Runtime, pq.Array(movie.Genres)}
+
+	// Use the QueryRow to execute the SQL query on our connection pool
+	// passing in the args slice as a variadic parameter and scanning the
+	// system-generated id, created_at and version values into the movie
+	// struct.
+	return m.DB.QueryRow(query, args...).Scan(
+		&movie.ID,
+		&movie.CreatedAt,
+		&movie.Version,
+	)
 }
 
 // Add a placeholder method for fetching a specific record from the movies table.
