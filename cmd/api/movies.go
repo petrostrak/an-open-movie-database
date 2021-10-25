@@ -191,8 +191,16 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Pass the unpdated movie record to our new Update() method.
+	//
+	// Intercept any ErrEditConflict error and call the new editConflictResponse()
+	// helper.
 	if err = app.models.Movies.Update(movie); err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 
