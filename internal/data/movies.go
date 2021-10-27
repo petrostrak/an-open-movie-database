@@ -250,7 +250,9 @@ func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*M
 
 	// Use QueryContext() to execute the query. This returns a sql.Rows resultset
 	// containing the result.
-	rows, err := m.DB.QueryContext(ctx, query)
+	//
+	// Pass the title and genres as the placeholder parameter values.
+	rows, err := m.DB.QueryContext(ctx, query, title, pq.Array(genres))
 	if err != nil {
 		return nil, err
 	}
