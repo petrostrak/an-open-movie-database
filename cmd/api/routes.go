@@ -15,7 +15,8 @@ func init() {
 	router = httprouter.New()
 }
 
-func (app *application) routes() *httprouter.Router {
+// Update the routes() to return a http.Handler instead of a *httprouter.Router.
+func (app *application) routes() http.Handler {
 
 	// Convert the notFoundResponse() helper to a http.Handler using the
 	// http.HandlerFunc() adapter, and then set it as the custom error
@@ -37,5 +38,6 @@ func (app *application) routes() *httprouter.Router {
 	router.HandlerFunc(http.MethodPatch, "/v1/movies/:id", app.updateMovieHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/movies/:id", app.deleteMovieHandler)
 
-	return router
+	// Wrap the router with the panic recovery middleware.
+	return app.recoverPanic(router)
 }
