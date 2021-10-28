@@ -1,6 +1,7 @@
 package data
 
 import (
+	"math"
 	"strings"
 
 	"github.com/petrostrak/an-open-movie-database/internal/validator"
@@ -63,4 +64,32 @@ func (f Filters) limit() int {
 // function, where we enforced maximum values of page_size=100 and page=10000000
 func (f Filters) offset() int {
 	return (f.Page - 1) * f.PageSize
+}
+
+// Define a new Metadata struct for holding the pagination metadata.
+type Metadata struct {
+	CurrentPage  int `json:"current_page,omitempty"`
+	PageSize     int `json:"page_size,omitempty"`
+	FirstPage    int `json:"first_page,omitempty"`
+	LastPage     int `json:"last_page,omitempty"`
+	TotalRecords int `json:"total_records,omitempty"`
+}
+
+// The calculateMetadata() function calculates the appropriate paginationn metadata
+// values given the total number of records, current page, and page size values. Note
+// that the last page value is calculated using the math.Ceil() function, which rounds
+// up a float to the nearest integer.
+func calculateMetadata(totalRecords, page, pageSize int) Metadata {
+	// We return an empty Metadata struct if there are no records.
+	if totalRecords == 0 {
+		return Metadata{}
+	}
+
+	return Metadata{
+		CurrentPage:  page,
+		PageSize:     pageSize,
+		FirstPage:    1,
+		LastPage:     int(math.Ceil(float64(totalRecords) / float64(pageSize))),
+		TotalRecords: totalRecords,
+	}
 }
