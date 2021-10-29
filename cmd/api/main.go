@@ -11,6 +11,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/petrostrak/an-open-movie-database/internal/data"
 	"github.com/petrostrak/an-open-movie-database/internal/jsonlog"
+	"github.com/petrostrak/an-open-movie-database/internal/mailer"
 )
 
 const (
@@ -38,16 +39,27 @@ type config struct {
 		burst  int
 		enable bool
 	}
+	// Update the config struct to hold the SMTP server settings.
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
 }
 
 // Define an application struct to hold the dependencies for our HTTP handlers, helpers,
 // and middleware.
 //
 // Change the logger field to have the type *jsonlog.Logger
+//
+// Update the application struct to hold a new Mailer instance.
 type application struct {
 	config config
 	logger *jsonlog.Logger
 	models data.Models
+	mailer mailer.Mailer
 }
 
 // go run ./cmd/api -port=3030 -env=production
@@ -79,6 +91,16 @@ func main() {
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enable, "limiter-enable", true, "Enable rate limiter")
 
+	// Read the SMTP server configuration settings into the config struct, using the
+	// Mailtrap settings as the default values. IMPORTANT: If you're following along,
+	// make sure to replace the default values for smtp-username and smtp-password
+	// with your own Mailtrap credentials.
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "    smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 25, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "a8c6ea4f80cc3f", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", "e6231e9d245f54", "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Online Movie DB <no-reply@omdb.net", "SMTP sender")
+
 	flag.Parse()
 
 	// Initialize a new jsonlog.Logger which writes any message -at or above- the INFO
@@ -108,10 +130,14 @@ func main() {
 	//
 	// Use the data.NewModels() to initialize a Models struct, passing in the
 	// connection pool as a parameter.
+	//
+	// Initialize a new Mailer instance using the settings from the command line
+	// flags, and add it to the application struct.
 	app := &application{
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
+		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.username, cfg.smtp.sender),
 	}
 
 	// Declare a new servemux and add a /v1/healthcheck route which dispatches requests
