@@ -41,10 +41,10 @@ func New(host string, port int, username, password, sender string) Mailer {
 // Define a Send() on the mailer type. This takes the recipient email address
 // as the first parameter, the name of the file containing the templates, and any
 // dynamic data from the template as an interface{} parameter.
-func (m Mailer) Send(recipient, templageFile string, data interface{}) error {
+func (m Mailer) Send(recipient, templateFile string, data interface{}) error {
 	// Use the ParseFS() to parse the required template file from the embedded
 	// file system.
-	tmpl, err := template.New("email").ParseFS(templateFS, "templates/"+templageFile)
+	tmpl, err := template.New("email").ParseFS(templateFS, "templates/"+templateFile)
 	if err != nil {
 		return err
 	}
@@ -52,6 +52,7 @@ func (m Mailer) Send(recipient, templageFile string, data interface{}) error {
 	// Execute the named template "subject", passing in the dynamic data and storing the
 	// result in a bytes.Buffer variable.
 	subject := new(bytes.Buffer)
+	err = tmpl.ExecuteTemplate(subject, "subject", data)
 	if err != nil {
 		return err
 	}
@@ -83,13 +84,22 @@ func (m Mailer) Send(recipient, templageFile string, data interface{}) error {
 	msg.SetBody("text/plain", plainBody.String())
 	msg.AddAlternative("text/html", htmlBody.String())
 
-	// Call the DialAndSend() method on the dialer, passing in the message to send. This
-	// opens a connection to the SMTP server, sends the message, then closes the
-	// connection. If there is a timeout, it will return a "dial tcp: i/o timeout"
-	// error.
-	err = m.dialer.DialAndSend(msg)
-	if err != nil {
-		return err
+	// Try sending the email up to three times before aborting and returning the final
+	// error. We sleep for 500 milliseconds between each attempt.
+	for i := 0; i <= 3; i++ {
+		// Call the DialAndSend() method on the dialer, passing in the message to send. This
+		// opens a connection to the SMTP server, sends the message, then closes the
+		// connection. If there is a timeout, it will return a "dial tcp: i/o timeout"
+		// error.
+		err = m.dialer.DialAndSend(msg)
+		// If everything worked, return nil.
+		if nil == err {
+			return nil
+		}
+
+		// If it didn't work, sleep for a short time and retry.
+		time.Sleep(500 * time.Millisecond)
 	}
-	return nil
+
+	return err
 }
