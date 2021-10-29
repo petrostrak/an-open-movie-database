@@ -180,3 +180,42 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 
 	return &user, nil
 }
+
+// Update the details for a specific user. Notice that we check against the version
+// field to help prevent any race conditions during the request cycle. We also check
+// for a violation of the "user_email_key" constraint when performing the update.
+func (m UserModel) Update(user *User) error {
+	query := `
+		UPDATE users
+		SET name = $1, email = $2, password_hash = $3, activated = $4, version = version + 1
+		WHERE id = $5 AND version = $6
+		RETURNING version`
+
+	args := []interface{}{
+		user.Name,
+		user.Email,
+		user.Password.hash,
+		user.Activated,
+		user.ID,
+		user.Version,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.Version)
+
+	if err != nil {
+		switch {
+		case err.Error() == `pq: duplicate key value violates unique
+			constraint "users_email_key"`:
+			return ErrDuplicateEmail
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+
+	return nil
+}
