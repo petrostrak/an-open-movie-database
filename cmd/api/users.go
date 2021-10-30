@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/petrostrak/an-open-movie-database/internal/data"
@@ -67,16 +66,9 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Launch a goroutine which runs an anonymous functions that sends the welcome email.
-	go func() {
-		// Run a deferred function which uses recover() to catch any panic, and log an
-		// error message instead of terminating the application.
-		defer func() {
-			if err := recover(); err != nil {
-				app.logger.PrintError(fmt.Errorf("%s", err), nil)
-			}
-		}()
-
+	// Use the background helper to execute an anonymous function that sends the welcome
+	// email.
+	app.background(func() {
 		// Call the Send() on our Mailer, passing in the user's email address,
 		// name of the template file, and the User struct containing the new user's data.
 		err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
@@ -87,7 +79,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 			app.logger.PrintError(err, nil)
 			return
 		}
-	}()
+	})
 
 	// Note that we also change this to send the client a 202 Accepted status code.
 	// This status code indicates that the request has been accepted for processing, but
