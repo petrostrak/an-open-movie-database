@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/petrostrak/an-open-movie-database/internal/data"
@@ -68,6 +69,14 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	// Launch a goroutine which runs an anonymous functions that sends the welcome email.
 	go func() {
+		// Run a deferred function which uses recover() to catch any panic, and log an
+		// error message instead of terminating the application.
+		defer func() {
+			if err := recover(); err != nil {
+				app.logger.PrintError(fmt.Errorf("%s", err), nil)
+			}
+		}()
+
 		// Call the Send() on our Mailer, passing in the user's email address,
 		// name of the template file, and the User struct containing the new user's data.
 		err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
