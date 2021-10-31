@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base32"
@@ -77,4 +78,19 @@ func ValidateTokenPlaintext(v validator.Validator, tokenPlaintext string) {
 // Define the TokenModel type.
 type TokenModel struct {
 	DB *sql.DB
+}
+
+// Insert() adds the data for a specific token to the tokens table.
+func (m *TokenModel) Insert(token *Token) error {
+	query := `
+		INSERT INTO tokens (hash, user_id, expiry, scope)
+		VALUES ($1, $2, $3, $4)`
+
+	args := []interface{}{token.Hash, token.UserID, token.Expiry, token.Scope}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := m.DB.ExecContext(ctx, query, args...)
+	return err
 }
