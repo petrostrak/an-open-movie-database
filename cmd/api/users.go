@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/petrostrak/an-open-movie-database/internal/data"
 	"github.com/petrostrak/an-open-movie-database/internal/validator"
@@ -66,12 +67,31 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// After the user record has been created in the database, generate a new activation
+	// token for the user.
+	token, err := app.models.Tokens.New(user.ID, 3*24*time.Hour, data.ScopeActivation)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 	// Use the background helper to execute an anonymous function that sends the welcome
 	// email.
 	app.background(func() {
+		// As there are now multiple pieces of data that we want to pass to our email
+		// templates, we create a map to act as a 'holding structure' for the data. This
+		// contains the plaintext version of the activation token for the user, along
+		// with their ID.
+		data := map[string]interface{}{
+			"activationToken": token.Plaintext,
+			"userID":          user.ID,
+		}
+
 		// Call the Send() on our Mailer, passing in the user's email address,
 		// name of the template file, and the User struct containing the new user's data.
-		err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
+		//
+		// Send the welcome email, passing in the map above as dynamic data.
+		err = app.mailer.Send(user.Email, "user_welcome.tmpl", data)
 		if err != nil {
 			// Importantly, if there is an error sending the email then we use the
 			// app.logger.PrintError() helper to manage it, instead of the
