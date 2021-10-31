@@ -2,9 +2,12 @@ package data
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/base32"
 	"math/rand"
 	"time"
+
+	"github.com/petrostrak/an-open-movie-database/internal/validator"
 )
 
 // Define constants for the token scope. For now we just define the scope "activation"
@@ -64,4 +67,14 @@ func generateToekn(userID int64, ttl time.Duration, scope string) (*Token, error
 	token.Hash = hash[:]
 
 	return token, nil
+}
+
+func ValidateTokenPlaintext(v validator.Validator, tokenPlaintext string) {
+	v.Check(tokenPlaintext != "", "token", "must be provided")
+	v.Check(len(tokenPlaintext) == 26, "token", "must be 26 bytes long")
+}
+
+// Define the TokenModel type.
+type TokenModel struct {
+	DB *sql.DB
 }
