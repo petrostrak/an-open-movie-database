@@ -80,6 +80,18 @@ type TokenModel struct {
 	DB *sql.DB
 }
 
+// The New() is a shortcut which creates a new Token struct and then inserts the
+// data inthe tokens table.
+func (m TokenModel) New(userID int64, ttl time.Duration, scope string) (*Token, error) {
+	token, err := generateToekn(userID, ttl, scope)
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.Insert(token)
+	return token, err
+}
+
 // Insert() adds the data for a specific token to the tokens table.
 func (m TokenModel) Insert(token *Token) error {
 	query := `
