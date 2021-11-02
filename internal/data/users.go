@@ -14,6 +14,7 @@ import (
 // Define a custom ErrDuplicateEmail error.
 var (
 	ErrDuplicateEmail = errors.New("duplicate email")
+	AnonymousUser     = &User{}
 )
 
 // Define a User struct to represent an individual user. Importantly, notice how we are
@@ -268,4 +269,9 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 
 	// Return the matching user.
 	return &user, nil
+}
+
+// Check if a User instance is the AnonymousUser.
+func (u *User) IsAnonymous() bool {
+	return u == AnonymousUser
 }
