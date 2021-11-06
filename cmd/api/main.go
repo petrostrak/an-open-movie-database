@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"database/sql"
+	"expvar"
 	"flag"
-	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -147,6 +147,10 @@ func main() {
 	// established.
 	logger.PrintInfo("database connection pool established", nil)
 
+	// Publish a new "version" variable in the expvar handler containing our application
+	// version number
+	expvar.NewString("version").Set(version)
+
 	// Declare an instance of the application struct, containing the config struct and
 	// the logger.
 	//
@@ -161,11 +165,6 @@ func main() {
 		models: data.NewModels(db),
 		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.username, cfg.smtp.sender),
 	}
-
-	// Declare a new servemux and add a /v1/healthcheck route which dispatches requests
-	// to the healthcheckHandler method.
-	mux := http.NewServeMux()
-	mux.HandleFunc("/v1/healthcheck", app.healthcheckHandler)
 
 	// Call app.serve() to start the server.
 	err = app.serve()
