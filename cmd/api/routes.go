@@ -63,5 +63,7 @@ func (app *application) routes() http.Handler {
 	// Use the authenticate() middleware on all requests.
 	//
 	// Add the enebleCORS() middleware
-	return app.recoverPanic(app.enableCORS(app.rateLimit(app.authenticate(router))))
+	//
+	// Use the metrics() middleware at the start of the chain.
+	return app.metrics(app.recoverPanic(app.enableCORS(app.rateLimit(app.authenticate(router)))))
 }
