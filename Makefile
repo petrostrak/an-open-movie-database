@@ -1,3 +1,7 @@
+# Create the new confirm target.
+confirm:
+	@echo -n 'Are you sure? [y/N] ' && read ans && [ $${ans:-N} = y ]
+
 run/api:
 	go run ./cmd/api
 
@@ -9,6 +13,7 @@ db/migration/new:
 	@echo 'Creating migration files for ${name}..'
 	migrate create -seq -ext=.sql -dir=./migrations ${name}
 
-db/migrations/up:
+# Include it as prerequisite.
+db/migrations/up: confirm
 	@echo 'Running up migrations..'
 	migrate -path ./migrations -database ${OMDB_DB_DSN} up
